@@ -1,0 +1,48 @@
+version: '3'
+services:
+  nginx:
+    container_name: ${PROJECT_NAME}-nginx
+    image: nginx:1.14-alpine
+    restart: always
+    ports:
+      - "9080:80"
+    environment:
+      SERVER_NAME: ${HOST_NAME}
+    volumes:
+      - ./docker-config/nginx/php.conf:/etc/nginx/conf.d/php.conf
+      - ./src:/var/www/html
+    depends_on:
+      - php
+  php:
+    container_name: ${PROJECT_NAME}-php
+    build:
+      context: ./src/
+      dockerfile: ./Dockerfile
+    environment:
+      APP_ENV: ${PROJECT_ENV}
+      APP_URL: http://${HOST_NAME}
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - mysql
+  mysql:
+    container_name: ${PROJECT_NAME}-mysql
+    image: mysql:8
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8082:3306"
+    volumes:
+      - db-volume:/var/lib/mysql
+volumes:
+  db-volume:
